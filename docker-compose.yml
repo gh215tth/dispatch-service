@@ -1,0 +1,41 @@
+version: '3.8'  # Thêm nếu chưa có
+services:
+  db:
+    image: postgres:15.3
+    container_name: dispatch_db
+    restart: always
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    ports:
+      - "${POSTGRES_PORT}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      # - ./initdb:/docker-entrypoint-initdb.d
+
+  flask_app:
+    build: .
+    container_name: dispatch_service
+    restart: on-failure  # Thay từ always thành on-failure
+    ports:
+      - "5000:5000"
+    depends_on:
+      - db
+    environment:
+      - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB} 
+
+  pgadmin:
+    image: dpage/pgadmin4:7
+    container_name: dispatch_pgadmin
+    restart: always
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD}
+    ports:
+      - "${PGADMIN_PORT}:80"
+    depends_on:
+      - db
+
+volumes:
+  postgres_data:
